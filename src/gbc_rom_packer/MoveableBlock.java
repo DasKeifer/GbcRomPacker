@@ -1,11 +1,10 @@
 package gbc_rom_packer;
 
 
+import gbc_framework.ByteBlock;
 import gbc_framework.rom_addressing.AssignedAddresses;
 import gbc_framework.rom_addressing.BankRange;
 import gbc_framework.rom_addressing.PrioritizedBankRange;
-
-import compiler.DataBlock;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -15,54 +14,32 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class MoveableBlock extends DataBlock
+public class MoveableBlock extends AllocBlock
 {
 	public static final Comparator<MoveableBlock> PRIORITY_SORTER = new PrioritySorter();
 	
 	private SortedSet<PrioritizedBankRange> allowableBankPreferences;
 	private SortedSet<PrioritizedBankRange> unattemptedAllowableBankPreferences;
 
-	protected MoveableBlock(String startingSegmentName)
+	protected MoveableBlock(ByteBlock code)
 	{
-		this(startingSegmentName, new ArrayList<>());
+		this(code, new ArrayList<>());
 	}
 	
-	public MoveableBlock(String startingSegmentName, int priority, byte startBank, byte stopBank)
+	public MoveableBlock(ByteBlock code, int priority, byte startBank, byte stopBank)
 	{
-		this(startingSegmentName);
+		this(code);
 		addAllowableBankRange(priority, startBank, stopBank);
 	}
 	
-	public MoveableBlock(String startingSegmentName, PrioritizedBankRange pref)
+	public MoveableBlock(ByteBlock code, PrioritizedBankRange pref)
 	{
-		this(startingSegmentName, prefAsList(pref));
+		this(code, prefAsList(pref));
 	}
 	
-	public MoveableBlock(String startingSegmentName, List<PrioritizedBankRange> prefs)
+	public MoveableBlock(ByteBlock code, List<PrioritizedBankRange> prefs)
 	{
-		super(startingSegmentName);
-		setMoveableBlockCommonData(prefs);
-	}
-	
-	protected MoveableBlock(List<String> sourceLines)
-	{
-		this(sourceLines, new ArrayList<>());
-	}
-	
-	public MoveableBlock(List<String> sourceLines, int priority, byte startBank, byte stopBank)
-	{
-		this(sourceLines);
-		addAllowableBankRange(priority, startBank, stopBank);
-	}
-	
-	public MoveableBlock(List<String> sourceLines, PrioritizedBankRange pref)
-	{
-		this(sourceLines, prefAsList(pref));
-	}
-	
-	public MoveableBlock(List<String> sourceLines, List<PrioritizedBankRange> prefs)
-	{
-		super(sourceLines);
+		super(code);
 		setMoveableBlockCommonData(prefs);
 	}
 	

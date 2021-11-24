@@ -233,7 +233,7 @@ public class AllocatableBank
 			// Reassign the fixed block addresses in case it can shrink based on where the movable blocks are allocated
 			for (FixedBlock block : fixedAllocations)
 			{
-				DataManagerUtils.assignBlockAndSegmentBankAddresses(block, block.getFixedAddress(), assignedAddresses);
+				block.assignAddresses(block.getFixedAddress(), assignedAddresses);
 			}
 			
 			// Now get the spaces that are left after the fixed block spaces are removed
@@ -262,7 +262,7 @@ public class AllocatableBank
 					// We need another pass to see if anything else no longer
 					// will fit
 					stable = false;
-					DataManagerUtils.removeBlockAndSegmentAddresses(alloc, assignedAddresses);
+					alloc.removeAddresses(assignedAddresses);
 					allocsThatDontFit.add(alloc);
 					allocItr.remove();
 				}
@@ -288,7 +288,7 @@ public class AllocatableBank
 			{
 				if (allocSize <= space.size())
 				{
-					DataManagerUtils.assignBlockAndSegmentBankAddresses(block, new BankAddress(bank, (short) space.getStart()), assignedAddresses);
+					block.assignAddresses(new BankAddress(bank, (short) space.getStart()), assignedAddresses);
 					space.shrink(allocSize);
 					placed = true;
 					break;

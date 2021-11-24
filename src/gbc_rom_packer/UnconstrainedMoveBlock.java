@@ -4,49 +4,30 @@ package gbc_rom_packer;
 import java.util.List;
 import java.util.SortedSet;
 
-import gbc_framework.constants.RomConstants;
+import gbc_framework.ByteBlock;
+import gbc_framework.RomConstants;
 import gbc_framework.rom_addressing.PrioritizedBankRange;
 
 public class UnconstrainedMoveBlock extends MoveableBlock
 {
-	public UnconstrainedMoveBlock(String startingSegmentName)
+	public UnconstrainedMoveBlock(ByteBlock code)
 	{
-		super(startingSegmentName);
+		super(code);
 	}
 	
-	public UnconstrainedMoveBlock(String startingSegmentName, int priority, byte startBank, byte stopBank)
+	public UnconstrainedMoveBlock(ByteBlock code, int priority, byte startBank, byte stopBank)
 	{
-		super(startingSegmentName, priority, startBank, stopBank);
+		super(code, priority, startBank, stopBank);
 	}
 	
-	public UnconstrainedMoveBlock(String startingSegmentName, PrioritizedBankRange pref)
+	public UnconstrainedMoveBlock(ByteBlock code, PrioritizedBankRange pref)
 	{
-		super(startingSegmentName, pref);
+		super(code, pref);
 	}
 	
-	public UnconstrainedMoveBlock(String startingSegmentName, List<PrioritizedBankRange> prefs)
+	public UnconstrainedMoveBlock(ByteBlock code, List<PrioritizedBankRange> prefs)
 	{
-		super(startingSegmentName, prefs);
-	}
-
-	public UnconstrainedMoveBlock(List<String> sourceLines)
-	{
-		super(sourceLines);
-	}
-	
-	public UnconstrainedMoveBlock(List<String> sourceLines, int priority, byte startBank, byte stopBank)
-	{
-		super(sourceLines, priority, startBank, stopBank);
-	}
-	
-	public UnconstrainedMoveBlock(List<String> sourceLines, PrioritizedBankRange pref)
-	{
-		super(sourceLines, pref);
-	}
-	
-	public UnconstrainedMoveBlock(List<String> sourceLines, List<PrioritizedBankRange> prefs)
-	{
-		super(sourceLines, prefs);
+		super(code, prefs);
 	}
 
 	@Override

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import gbc_framework.constants.RomConstants;
+import gbc_framework.RomConstants;
 import gbc_framework.rom_addressing.AssignedAddresses;
 import gbc_framework.rom_addressing.BankAddress;
 import gbc_framework.utils.RomUtils;
@@ -51,14 +51,14 @@ public class DataManager
 		for (FixedBlock block : fixedBlocks)
 		{
 			BankAddress address = block.getFixedAddress();
-			DataManagerUtils.assignBlockAndSegmentBanks(block, address.getBank(), assignedAddresses);
+			block.assignBank(address.getBank(), assignedAddresses);
 		}
 		
 		// Now go through and assign preliminary addresses and add them to the banks
 		for (FixedBlock block : fixedBlocks)
 		{
 			BankAddress address = block.getFixedAddress();
-			DataManagerUtils.assignBlockAndSegmentBankAddresses(block, address, assignedAddresses);
+			block.assignAddresses(address, assignedAddresses);
 			freeSpace.get(block.getFixedAddress().getBank()).addFixedBlock(block, assignedAddresses);
 		}
 	}
@@ -119,7 +119,7 @@ public class DataManager
 							+ "happen if valid banks are given for the preferences", nextBank));
 				}
 				bank.addMoveableBlock(alloc);
-				DataManagerUtils.assignBlockAndSegmentBanks(alloc, bank.bank, assignedAddresses);
+				alloc.assignBank(bank.bank, assignedAddresses);
 			}
 		}
 		
