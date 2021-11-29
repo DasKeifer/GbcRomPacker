@@ -1,4 +1,4 @@
-package gbc_rom_packer;
+package rom_packer;
 
 
 import java.util.List;
@@ -8,7 +8,7 @@ import gbc_framework.ByteBlock;
 import gbc_framework.RomConstants;
 import gbc_framework.rom_addressing.PrioritizedBankRange;
 
-public class UnconstrainedMoveBlock extends MoveableBlock
+public class UnconstrainedMoveBlock extends MovableBlock
 {
 	public UnconstrainedMoveBlock(ByteBlock code)
 	{

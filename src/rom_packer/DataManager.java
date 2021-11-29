@@ -1,4 +1,4 @@
-package gbc_rom_packer;
+package rom_packer;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -22,17 +22,21 @@ public class DataManager
 		assignedAddresses = new AssignedAddresses();
 	}
 	
-	public AssignedAddresses allocateBlocks(
-			byte[] bytesToPlaceIn,
-			List<FixedBlock> fixedBlocks,
-			List<MoveableBlock> toAlloc)
+	public AssignedAddresses allocateBlocks(byte[] bytesToPlaceIn, Blocks blocks)
 	{
+		freeSpace.clear();
+		assignedAddresses.clear();
+		
 		// Determine what space we have free
 		determineAllFreeSpace(bytesToPlaceIn);
 		
-		// Assign fixed blocks first so the moveable ones can reference them
-		allocateFixedBlocks(fixedBlocks);
+		// Assign fixed blocks first so the movable ones can reference them
+		allocateFixedBlocks(blocks.getAllFixedBlocks());
 	
+		// Handle the fixed blocks
+		List<MovableBlock> toAlloc = new LinkedList<>(blocks.getAllMovableBlocks());
+		toAlloc.addAll(tryFixHybridBlocks(blocks.getAllHybridBlocks()));
+		
 		// Allocate space for the constrained blocks then the unconstrained ones
 		if (tryToAssignBanks(toAlloc))
 		{
@@ -44,7 +48,7 @@ public class DataManager
 		
 		return null;
 	}
-	
+
 	private void allocateFixedBlocks(List<FixedBlock> fixedBlocks)
 	{		
 		// First assign them to their banks. This allows some optimization of sizes some
@@ -59,14 +63,51 @@ public class DataManager
 		{
 			BankAddress address = block.getFixedAddress();
 			block.assignAddresses(address, assignedAddresses);
-			freeSpace.get(block.getFixedAddress().getBank()).addFixedBlock(block, assignedAddresses);
+			if (!freeSpace.get(address.getBank()).addFixedBlock(block, assignedAddresses))
+			{
+                throw new RuntimeException(String.format("There was not space from 0x%x to 0x%x in bank 0x%x for FixedBlock %s - "
+                        + "only ReplacementBlocks do not need free space in the bank", address.getAddressInBank(), 
+                        address.getAddressInBank() + block.getWorstCaseSize(assignedAddresses), address.getBank(), block.getId())); 
+			}
 		}
 	}
 	
-	private boolean tryToAssignBanks(List<MoveableBlock> toAlloc)
+	private List<MovableBlock> tryFixHybridBlocks(List<HybridBlock> hybridBlocks) 
+	{
+		// For each fixed block, try first to fix it
+		List<MovableBlock> unfixed = new LinkedList<>();
+		
+		// First treat them like fixed blocks
+		
+		// Assign them to their banks. This allows some optimization of sizes some
+		for (HybridBlock block : hybridBlocks)
+		{
+			BankAddress address = block.getFixedBlock().getFixedAddress();
+			block.getFixedBlock().assignBank(address.getBank(), assignedAddresses);
+		}
+		
+		// Now go through and assign preliminary addresses and try to add them to the banks.
+		// If they fail to add, then we treat them as movable blocks
+		for (HybridBlock block : hybridBlocks)
+		{
+			BankAddress address = block.getFixedBlock().getFixedAddress();
+			block.getFixedBlock().assignAddresses(address, assignedAddresses);
+			if (!freeSpace.get(address.getBank()).addFixedBlock(block.getFixedBlock(), assignedAddresses))
+			{
+				// If we couldn't add it, then add it to the list of ones we couldn't fix and remove the
+				// assigned addresses
+				unfixed.add(block.getMovableBlock());
+				block.getFixedBlock().removeAddresses(assignedAddresses);
+			}
+		}
+		
+		return unfixed;
+	}
+	
+	private boolean tryToAssignBanks(List<MovableBlock> toAlloc)
 	{
 		// Set/Reset each of the blocks working copy of the preferences
-		for (MoveableBlock block : toAlloc)
+		for (MovableBlock block : toAlloc)
 		{
 			block.resetBankPreferences();
 		}
@@ -75,7 +116,7 @@ public class DataManager
 		return tryToAssignBanksRecursor(toAlloc);
 	}
 
-	private boolean tryToAssignBanksRecursor(List<MoveableBlock> toAlloc)
+	private boolean tryToAssignBanksRecursor(List<MovableBlock> toAlloc)
 	{		
 		// Assign each alloc to its next preferred/allowable bank
 		if (!assignAllocationsToTheirNextBank(toAlloc))
@@ -85,7 +126,7 @@ public class DataManager
 		
 		// Go through and remove any allocations that don't fit in the banks as
 		// they are currently assigned
-		List<MoveableBlock> allocsThatDontFit = new LinkedList<>();
+		List<MovableBlock> allocsThatDontFit = new LinkedList<>();
 		removeExcessAllocsFromBanks(allocsThatDontFit);
 		
 		// If all allocs fit, we are done
@@ -99,9 +140,9 @@ public class DataManager
 		return tryToAssignBanksRecursor(allocsThatDontFit);
 	}
 	
-	private boolean assignAllocationsToTheirNextBank(List<MoveableBlock> toAlloc)
+	private boolean assignAllocationsToTheirNextBank(List<MovableBlock> toAlloc)
 	{
-		for (MoveableBlock alloc : toAlloc)
+		for (MovableBlock alloc : toAlloc)
 		{
 			// Ran out of banks to try! Failed to allocate a block
 			if (alloc.isUnattemptedAllowableBanksEmpty())
@@ -118,7 +159,7 @@ public class DataManager
 							alloc.getId() + " but failed to get a reference to the bank! This should never "
 							+ "happen if valid banks are given for the preferences", nextBank));
 				}
-				bank.addMoveableBlock(alloc);
+				bank.addMovableBlock(alloc);
 				alloc.assignBank(bank.bank, assignedAddresses);
 			}
 		}
@@ -126,19 +167,19 @@ public class DataManager
 		return true;
 	}
 	
-	private void removeExcessAllocsFromBanks(List<MoveableBlock> allocsThatDontFit)
+	private void removeExcessAllocsFromBanks(List<MovableBlock> allocsThatDontFit)
 	{		
 		removeExcessAllocsFromBanksRecursor(allocsThatDontFit);
 	}
 
-	private boolean removeExcessAllocsFromBanksRecursor(List<MoveableBlock> allocsThatDontFit)
+	private boolean removeExcessAllocsFromBanksRecursor(List<MovableBlock> allocsThatDontFit)
 	{	
 		// We have to track this separately from the list since the list passed in may
 		// not be empty
 		boolean foundAllocThatDoesntFit = false;
 		
 		// For each bank, pack and remove any excess
-		List<MoveableBlock> bankAllocsThatDontFit = new LinkedList<>();
+		List<MovableBlock> bankAllocsThatDontFit = new LinkedList<>();
 		for (AllocatableBank bank : freeSpace.values())
 		{
 			foundAllocThatDoesntFit = bank.checkForAndRemoveExcessAllocs(bankAllocsThatDontFit, assignedAddresses) 

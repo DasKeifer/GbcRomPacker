@@ -1,4 +1,4 @@
-package gbc_rom_packer;
+package rom_packer;
 
 
 import gbc_framework.ByteBlock;
@@ -14,33 +14,33 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class MoveableBlock extends AllocBlock
+public class MovableBlock extends AllocBlock
 {
-	public static final Comparator<MoveableBlock> PRIORITY_SORTER = new PrioritySorter();
+	public static final Comparator<MovableBlock> PRIORITY_SORTER = new PrioritySorter();
 	
 	private SortedSet<PrioritizedBankRange> allowableBankPreferences;
 	private SortedSet<PrioritizedBankRange> unattemptedAllowableBankPreferences;
 
-	protected MoveableBlock(ByteBlock code)
+	protected MovableBlock(ByteBlock code)
 	{
 		this(code, new ArrayList<>());
 	}
 	
-	public MoveableBlock(ByteBlock code, int priority, byte startBank, byte stopBank)
+	public MovableBlock(ByteBlock code, int priority, byte startBank, byte stopBank)
 	{
 		this(code);
 		addAllowableBankRange(priority, startBank, stopBank);
 	}
 	
-	public MoveableBlock(ByteBlock code, PrioritizedBankRange pref)
+	public MovableBlock(ByteBlock code, PrioritizedBankRange pref)
 	{
 		this(code, prefAsList(pref));
 	}
 	
-	public MoveableBlock(ByteBlock code, List<PrioritizedBankRange> prefs)
+	public MovableBlock(ByteBlock code, List<PrioritizedBankRange> prefs)
 	{
 		super(code);
-		setMoveableBlockCommonData(prefs);
+		setMovableBlockCommonData(prefs);
 	}
 	
 	private static ArrayList<PrioritizedBankRange> prefAsList(PrioritizedBankRange pref)
@@ -50,7 +50,7 @@ public class MoveableBlock extends AllocBlock
 		return prefAsList;
 	}
 	
-	private void setMoveableBlockCommonData(List<PrioritizedBankRange> prefs)
+	private void setMovableBlockCommonData(List<PrioritizedBankRange> prefs)
 	{		
 		allowableBankPreferences = new TreeSet<>(PrioritizedBankRange.BASIC_SORTER);
 		for (PrioritizedBankRange pref : prefs)
@@ -155,9 +155,9 @@ public class MoveableBlock extends AllocBlock
 		}
 	}
 	
-	public static class PrioritySorter implements Comparator<MoveableBlock>
+	public static class PrioritySorter implements Comparator<MovableBlock>
 	{
-		public int compare(MoveableBlock a1, MoveableBlock a2)
+		public int compare(MovableBlock a1, MovableBlock a2)
 	    {   
 			int compareVal = Integer.compare(a1.getNextUnatemptedAllowableBankPriority(), a2.getNextUnatemptedAllowableBankPriority());
 			

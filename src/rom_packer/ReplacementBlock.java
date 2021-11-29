@@ -1,4 +1,4 @@
-package gbc_rom_packer;
+package rom_packer;
 
 
 import gbc_framework.ByteBlock;

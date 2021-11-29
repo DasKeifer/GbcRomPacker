@@ -1,4 +1,4 @@
-package gbc_rom_packer;
+package rom_packer;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -18,7 +18,7 @@ public class AllocatableBank
 	List<FixedBlock> fixedAllocations;
 	// We don't use a set because we modify allocation and its bad practice to
 	// do that for items in a set even if it should not impact the compare function
-	List<MoveableBlock> priortizedAllocations;
+	List<MovableBlock> priortizedAllocations;
 	
 	public AllocatableBank(byte bank)
 	{
@@ -85,20 +85,38 @@ public class AllocatableBank
 		}
 	}
 	
-	public void addFixedBlock(FixedBlock fixedAlloc, AssignedAddresses assignedAddresses)
+	public boolean addFixedBlock(FixedBlock fixedAlloc, AssignedAddresses assignedAddresses)
 	{
-		fixedAllocations.add(fixedAlloc);
-		// Ensure there is space for this fixed alloc. This will throw if there is not space
-		getSpacesLeftRemovingFixedAllocs(assignedAddresses);
+		List<AddressRange> spacesLeft = getSpacesCopy();
+		
+		if (!(fixedAlloc instanceof ReplacementBlock))
+		{
+			// Get the existing list of spaces
+			removeFixedBlocksSpaces(spacesLeft, assignedAddresses);
+			
+			// Now try to add this one
+			return tryRemoveSpace(fixedAlloc, spacesLeft, assignedAddresses);
+		}
+		else
+		{
+			fixedAllocations.add(fixedAlloc);
+			return true;
+		}
 	}
 	
-	private List<AddressRange> getSpacesLeftRemovingFixedAllocs(AssignedAddresses assignedAddresses)
+	private List<AddressRange> getSpacesCopy()
 	{
 		List<AddressRange> spacesLeft = new LinkedList<>();
 		for (AddressRange range : spaces)
 		{
 			spacesLeft.add(new AddressRange(range));
 		}
+		return spacesLeft;
+	}
+	
+	private List<AddressRange> getSpacesLeftRemovingFixedAllocs(AssignedAddresses assignedAddresses)
+	{
+		List<AddressRange> spacesLeft = getSpacesCopy();
 		
 		removeFixedBlocksSpaces(spacesLeft, assignedAddresses);
 		removeReplacementBlocksSpaces(spacesLeft, assignedAddresses);
@@ -109,9 +127,6 @@ public class AllocatableBank
 
 	private void removeFixedBlocksSpaces(List<AddressRange> spacesLeft, AssignedAddresses assignedAddresses)
 	{
-		AddressRange containingSpace = null;
-		AddressRange fixedRange;
-		int spaceIndex;
 		for (FixedBlock block : fixedAllocations)
 		{
 			// If its a replacement block, we might not have space for it since its overwriting
@@ -121,41 +136,54 @@ public class AllocatableBank
 				continue;
 			}
 			
-			// For non replacement blocks, we need to make sure they fit in a space
-			// We know that it should always be contained in a space
-			fixedRange = new AddressRange(block.getFixedAddress().getAddressInBank(), block.getFixedAddress().getAddressInBank() + block.getWorstCaseSize(assignedAddresses));
-			for (spaceIndex = 0; spaceIndex < spacesLeft.size(); spaceIndex++)
+			// Place the block
+			if (!tryRemoveSpace(block, spacesLeft, assignedAddresses))
 			{
-				// If it is contained in the space, we found where it lives. We 
-				// need to remove it from the space and potentially add a new
-				// space to the list
-				if (spacesLeft.get(spaceIndex).contains(fixedRange))
-				{
-					containingSpace = spacesLeft.get(spaceIndex);
-					break;
-				}
-			}
-			
-			// If we didn't find any space that fits this, then we cannot put it here so we
-			// abort
-			if (containingSpace == null)
-			{
-				throw new RuntimeException(String.format("There was not space from 0x%x to 0x%x in bank 0x%x for FixedBlock %s - "
-						+ "only ReplacementBlocks do not need free space in the bank", block.getFixedAddress().getAddressInBank(), 
-						block.getFixedAddress().getAddressInBank() + block.getWorstCaseSize(assignedAddresses), bank, block.getId()));
-			}
-			
-			// Otherwise its good - we found a space that contains it as expected
-			AddressRange splitRange = containingSpace.removeOverlap(fixedRange);
-			if (containingSpace.isEmpty())
-			{
-				spacesLeft.remove(spaceIndex);
-			}
-			if (splitRange != null)
-			{
-				spacesLeft.add(splitRange);
+                throw new RuntimeException(String.format("Desync error! There was no longer space in bank 0x%x for FixedBlock %s from 0x%x to 0x%x - "
+                        + "only ReplacementBlocks do not need free space in the bank", bank, block.getId(), 
+                        block.getFixedAddress().getAddressInBank(), 
+                        block.getFixedAddress().getAddressInBank() + block.getWorstCaseSize(assignedAddresses)));
 			}
 		}
+	}
+	
+	private boolean tryRemoveSpace(FixedBlock block, List<AddressRange> spacesLeft, AssignedAddresses assignedAddresses)
+	{
+		AddressRange fixedRange = new AddressRange(block.getFixedAddress().getAddressInBank(), block.getFixedAddress().getAddressInBank() + block.getWorstCaseSize(assignedAddresses));
+		AddressRange containingSpace = null;
+		int spaceIndex;
+		for (spaceIndex = 0; spaceIndex < spacesLeft.size(); spaceIndex++)
+		{
+			// If it is contained in the space, we found where it lives. We 
+			// need to remove it from the space and potentially add a new
+			// space to the list
+			if (spacesLeft.get(spaceIndex).contains(fixedRange))
+			{
+				containingSpace = spacesLeft.get(spaceIndex);
+				break;
+			}
+		}
+		
+		// If we didn't find any space that fits this, then we cannot put it here so we
+		// abort
+		if (containingSpace == null)
+		{
+			return false;
+		}
+		
+		// Otherwise its good - we found a space that contains it as expected
+		AddressRange splitRange = containingSpace.removeOverlap(fixedRange);
+		if (containingSpace.isEmpty())
+		{
+			spacesLeft.remove(spaceIndex);
+		}
+		
+		if (splitRange != null)
+		{
+			spacesLeft.add(splitRange);
+		}
+		
+		return true;
 	}
 	
 	private void removeReplacementBlocksSpaces(List<AddressRange> spacesLeft, AssignedAddresses assignedAddresses)
@@ -199,12 +227,12 @@ public class AllocatableBank
 		spacesLeft.addAll(newRanges);
 	}
 	
-	public void addMoveableBlock(MoveableBlock alloc)
+	public void addMovableBlock(MovableBlock alloc)
 	{
 		priortizedAllocations.add(alloc);
     }
 
-	public boolean checkForAndRemoveExcessAllocs(List<MoveableBlock> allocsThatDontFit, AssignedAddresses assignedAddresses)
+	public boolean checkForAndRemoveExcessAllocs(List<MovableBlock> allocsThatDontFit, AssignedAddresses assignedAddresses)
 	{
 		// Clear the spaces and output var
 		// Clear just the addresses but keep the banks since they still are
@@ -212,17 +240,17 @@ public class AllocatableBank
 		allocsThatDontFit.clear();
 		
 		// Ensure the allocations are sorted
-		priortizedAllocations.sort(MoveableBlock.PRIORITY_SORTER);
+		priortizedAllocations.sort(MovableBlock.PRIORITY_SORTER);
 		
 		return checkForAndRemoveExcessAllocsInCollection(priortizedAllocations.iterator(), assignedAddresses, allocsThatDontFit);
 	}
 
 	// TODO later: Probably can optimize packing into bank space some (i.e. leave most space, leave smallest space)
-	private boolean checkForAndRemoveExcessAllocsInCollection(Iterator<MoveableBlock> allocItr, AssignedAddresses assignedAddresses, List<MoveableBlock> allocsThatDontFit)
+	private boolean checkForAndRemoveExcessAllocsInCollection(Iterator<MovableBlock> allocItr, AssignedAddresses assignedAddresses, List<MovableBlock> allocsThatDontFit)
 	{
 		boolean stable = false;
 		boolean placed;
-		MoveableBlock alloc;
+		MovableBlock alloc;
 		int allocSize;
 		List<AddressRange> spacesLeft;
 		while (!stable)
@@ -280,7 +308,7 @@ public class AllocatableBank
 		boolean placed;
 		int allocSize;
 		
-		for (MoveableBlock block : priortizedAllocations)
+		for (MovableBlock block : priortizedAllocations)
 		{
 			placed = false;
 			allocSize = block.getWorstCaseSize(assignedAddresses);

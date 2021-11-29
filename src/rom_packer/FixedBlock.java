@@ -1,4 +1,4 @@
-package gbc_rom_packer;
+package rom_packer;
 
 
 import gbc_framework.ByteBlock;
@@ -12,11 +12,6 @@ public class FixedBlock extends AllocBlock
 	public FixedBlock(ByteBlock code, int fixedStartAddress)
 	{
 		super(code);
-		setFixedBlockCommonData(fixedStartAddress);
-	}
-	
-	private void setFixedBlockCommonData(int fixedStartAddress)
-	{
 		address = new BankAddress(fixedStartAddress);
 	}
 
