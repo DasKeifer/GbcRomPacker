@@ -1,9 +1,13 @@
 package rom_packer;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import gbc_framework.SegmentedWriter;
+import gbc_framework.rom_addressing.AssignedAddresses;
 
 public class Blocks 
 {
@@ -60,5 +64,23 @@ public class Blocks
 	public List<MovableBlock> getAllMovableBlocks()
 	{
 		return movableBlocks;
+	}
+	
+	public void writeBlocks(SegmentedWriter writer, AssignedAddresses assignedAddresses) throws IOException
+	{
+		for (AllocBlock block : fixedBlocks)
+		{
+			block.write(writer, assignedAddresses);
+		}
+		
+		for (HybridBlock block : hybridBlocks)
+		{
+			block.write(writer, assignedAddresses);
+		}
+		
+		for (AllocBlock block : movableBlocks)
+		{
+			block.write(writer, assignedAddresses);
+		}
 	}
 }

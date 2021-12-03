@@ -1,8 +1,10 @@
 package rom_packer;
 
 
+import java.io.IOException;
 import java.util.Set;
 
+import gbc_framework.SegmentedWriter;
 import gbc_framework.ByteBlock;
 import gbc_framework.rom_addressing.AssignedAddresses;
 import gbc_framework.rom_addressing.BankAddress;
@@ -44,5 +46,10 @@ public class AllocBlock
 	public void removeAddresses(AssignedAddresses assignedAddresses) 
 	{
 		block.removeAddresses(assignedAddresses);
+	}
+	
+	public void write(SegmentedWriter writer, AssignedAddresses assignedAddresses) throws IOException 
+	{
+		block.write(writer, assignedAddresses);
 	}
 }

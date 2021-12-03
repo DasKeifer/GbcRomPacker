@@ -1,5 +1,10 @@
 package rom_packer;
 
+import java.io.IOException;
+
+import gbc_framework.SegmentedWriter;
+import gbc_framework.rom_addressing.AssignedAddresses;
+
 public class HybridBlock 
 {
 	private FixedBlock fixed;
@@ -19,5 +24,10 @@ public class HybridBlock
 	public MovableBlock getMovableBlock() 
 	{
 		return movable;
+	}
+
+	public void write(SegmentedWriter writer, AssignedAddresses assignedAddresses) throws IOException
+	{
+		movable.write(writer, assignedAddresses);
 	}
 }
