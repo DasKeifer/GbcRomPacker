@@ -26,10 +26,10 @@ public class MovableBlock extends AllocBlock
 		this(code, new ArrayList<>());
 	}
 	
-	public MovableBlock(ByteBlock code, int priority, byte startBank, byte stopBank)
+	public MovableBlock(ByteBlock code, int priority, byte startBank, byte stopBankExclusive)
 	{
 		this(code);
-		addAllowableBankRange(priority, startBank, stopBank);
+		addAllowableBankRange(priority, startBank, stopBankExclusive);
 	}
 	
 	public MovableBlock(ByteBlock code, PrioritizedBankRange pref)
@@ -69,9 +69,9 @@ public class MovableBlock extends AllocBlock
 		allowableBankPreferences.add(new PrioritizedBankRange(priority, bankRange));
 	}
 	
-	public void addAllowableBankRange(int priority, byte startBank, byte stopBank)
+	public void addAllowableBankRange(int priority, byte startBank, byte stopBankExclusive)
 	{
-		allowableBankPreferences.add(new PrioritizedBankRange(priority, startBank, stopBank));
+		allowableBankPreferences.add(new PrioritizedBankRange(priority, startBank, stopBankExclusive));
 	}
 	
 	public SortedSet<PrioritizedBankRange> getAllowableBankPreferences()
