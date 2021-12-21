@@ -1,8 +1,7 @@
 package rom_packer;
 
 
-import gbc_framework.ByteBlock;
-import gbc_framework.rom_addressing.AssignedAddresses;
+import gbc_framework.SegmentedByteBlock;
 import gbc_framework.rom_addressing.BankRange;
 import gbc_framework.rom_addressing.PrioritizedBankRange;
 
@@ -21,23 +20,23 @@ public class MovableBlock extends AllocBlock
 	private SortedSet<PrioritizedBankRange> allowableBankPreferences;
 	private SortedSet<PrioritizedBankRange> unattemptedAllowableBankPreferences;
 
-	protected MovableBlock(ByteBlock code)
+	protected MovableBlock(SegmentedByteBlock code)
 	{
 		this(code, new ArrayList<>());
 	}
 	
-	public MovableBlock(ByteBlock code, int priority, byte startBank, byte stopBankExclusive)
+	public MovableBlock(SegmentedByteBlock code, int priority, byte startBank, byte stopBankExclusive)
 	{
 		this(code);
 		addAllowableBankRange(priority, startBank, stopBankExclusive);
 	}
 	
-	public MovableBlock(ByteBlock code, PrioritizedBankRange pref)
+	public MovableBlock(SegmentedByteBlock code, PrioritizedBankRange pref)
 	{
 		this(code, prefAsList(pref));
 	}
 	
-	public MovableBlock(ByteBlock code, List<PrioritizedBankRange> prefs)
+	public MovableBlock(SegmentedByteBlock code, List<PrioritizedBankRange> prefs)
 	{
 		super(code);
 		setMovableBlockCommonData(prefs);
@@ -165,8 +164,7 @@ public class MovableBlock extends AllocBlock
 			{
 				// Give larger blocks higher priority - We have to do it agnostic to where things are
 				// allocated but that is okay as this does not need to be 100% accurate
-				final AssignedAddresses emptyAssigns = new AssignedAddresses();
-				compareVal = Integer.compare(a2.getWorstCaseSize(emptyAssigns), a1.getWorstCaseSize(emptyAssigns));
+				compareVal = Integer.compare(a2.getWorstCaseSize(), a1.getWorstCaseSize());
 			}
 			
 			if (compareVal == 0)

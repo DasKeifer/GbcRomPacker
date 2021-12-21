@@ -85,8 +85,17 @@ public class AllocatableBank
 		}
 	}
 	
+	public void sortAndCombineSpaces()
+	{
+		AddressRange.sortAndCombine(spaces);
+	}
+	
 	public boolean addFixedBlock(FixedBlock fixedAlloc, AssignedAddresses assignedAddresses)
 	{
+		if (bank == 7)
+		{
+			int i = 0;
+		}
 		List<AddressRange> spacesLeft = getSpacesCopy();
 		
 		if (!(fixedAlloc instanceof ReplacementBlock))
@@ -229,6 +238,10 @@ public class AllocatableBank
 	
 	public void addMovableBlock(MovableBlock alloc)
 	{
+		if (bank == 7)
+		{
+			int i = 0;
+		}
 		priortizedAllocations.add(alloc);
     }
 
@@ -304,7 +317,7 @@ public class AllocatableBank
 	{
 		// Get the spaces that are left after the fixed block spaces are removed
 		List<AddressRange> spacesLeft = getSpacesLeftRemovingFixedAllocs(assignedAddresses);
-		
+
 		boolean placed;
 		int allocSize;
 		

@@ -2,16 +2,20 @@ package rom_packer;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
 import gbc_framework.RomConstants;
+import gbc_framework.rom_addressing.AddressRange;
 import gbc_framework.rom_addressing.AssignedAddresses;
 import gbc_framework.rom_addressing.BankAddress;
 import gbc_framework.utils.RomUtils;
 
 public class DataManager
 {	
+	// TODO later: Add a config file/interface for blocks to consider not free as well
+	
 	// BankId, bank object
 	private SortedMap<Byte, AllocatableBank> freeSpace;
 	private AssignedAddresses assignedAddresses;
@@ -22,20 +26,42 @@ public class DataManager
 		assignedAddresses = new AssignedAddresses();
 	}
 	
-	public AssignedAddresses allocateBlocks(byte[] bytesToPlaceIn, Blocks blocks)
+	public AssignedAddresses allocateBlocks(
+			byte[] bytesToAllocateIn, 
+			Blocks blocks
+	)
+	{
+		return allocateBlocks(bytesToAllocateIn, blocks, null);
+	}
+	
+	public AssignedAddresses allocateBlocks(
+			byte[] bytesToAllocateIn, 
+			Blocks blocks,
+			List<AddressRange> spacesToConsiderFree
+	)
+	{
+		return allocateBlocks(bytesToAllocateIn, blocks, spacesToConsiderFree, null);
+	}
+	
+	public AssignedAddresses allocateBlocks(
+			byte[] bytesToAllocateIn, 
+			Blocks blocks, 
+			List<AddressRange> spacesToConsiderFree,
+			List<AddressRange> hybridSpaceToBlank
+	)
 	{
 		freeSpace.clear();
 		assignedAddresses.clear();
 		
 		// Determine what space we have free
-		determineAllFreeSpace(bytesToPlaceIn);
+		determineAllFreeSpace(bytesToAllocateIn, spacesToConsiderFree);
 		
 		// Assign fixed blocks first so the movable ones can reference them
 		allocateFixedBlocks(blocks.getAllFixedBlocks());
 	
 		// Handle the fixed blocks
 		List<MovableBlock> toAlloc = new LinkedList<>(blocks.getAllMovableBlocks());
-		toAlloc.addAll(tryFixHybridBlocks(blocks.getAllHybridBlocks()));
+		toAlloc.addAll(tryFixHybridBlocks(blocks.getAllHybridBlocks(), hybridSpaceToBlank));
 		
 		// Allocate space for the constrained blocks then the unconstrained ones
 		if (tryToAssignBanks(toAlloc))
@@ -72,7 +98,7 @@ public class DataManager
 		}
 	}
 	
-	private List<MovableBlock> tryFixHybridBlocks(List<HybridBlock> hybridBlocks) 
+	private List<MovableBlock> tryFixHybridBlocks(List<HybridBlock> hybridBlocks, List<AddressRange> hybridSpaceToBlank) 
 	{
 		// For each fixed block, try first to fix it
 		List<MovableBlock> unfixed = new LinkedList<>();
@@ -98,6 +124,15 @@ public class DataManager
 				// assigned addresses
 				unfixed.add(block.getMovableBlock());
 				block.getFixedBlock().removeAddresses(assignedAddresses);
+				
+				// If the list was passed to keep track of the moved hybrids, add it
+				if (hybridSpaceToBlank != null)
+				{
+					// TODO: optimization a get original size?
+					hybridSpaceToBlank.add(new AddressRange(
+							block.getFixedBlock().getFixedAddress(), 
+							block.getFixedBlock().getWorstCaseSize(assignedAddresses)));
+				}
 			}
 		}
 		
@@ -218,7 +253,7 @@ public class DataManager
 	//audio 3d & 3e
 	//sfx 3f
 	
-	private void determineAllFreeSpace(byte[] rawBytes)
+	private void determineAllFreeSpace(byte[] rawBytes, List<AddressRange> spacesToConsiderFree)
 	{
 		freeSpace.clear();
 		
@@ -229,17 +264,19 @@ public class DataManager
 			AllocatableBank bankSpace = new AllocatableBank(bank);
 			freeSpace.put(bank, bankSpace);
 			
-			determineFreeSpaceInBank(rawBytes, bank, bankSpace);
+			determineFreeSpaceInBank(rawBytes, bankSpace, spacesToConsiderFree);
 		}
 	}
 
-	private void determineFreeSpaceInBank(byte[] rawBytes, byte bankToCheck, AllocatableBank bank)
+	private void determineFreeSpaceInBank(byte[] rawBytes, AllocatableBank bank, List<AddressRange> spacesToConsiderFree)
 	{
-		int[] bankBounds = RomUtils.getBankBounds(bankToCheck);
+		int[] bankBounds = RomUtils.getBankBounds(bank.bank);		
 		// Loop through the bank looking for empty space
 		int address = bankBounds[0];
 		while (address <= bankBounds[1])
 		{
+			//Two cases - first is 
+			
 			if (rawBytes[address] == (byte) 0xFF)
 			{
 				int spaceStart = address;
@@ -252,8 +289,51 @@ public class DataManager
 				{
 					bank.addSpace(spaceStart, address);
 				}
-			} 
+			}
 			address++;
+		}
+		
+		// Now add all the spaces that go in this bank
+		addSpacesToConsiderFree(bank, spacesToConsiderFree);
+		
+		// Finally sort and combine them to remove overlap and arbitrary breaks
+		bank.sortAndCombineSpaces();
+	}
+	
+	private void addSpacesToConsiderFree(AllocatableBank bank, List<AddressRange> spacesToConsiderFree)
+	{
+		int[] bankBounds = RomUtils.getBankBounds(bank.bank);
+		
+		ListIterator<AddressRange> arItr = spacesToConsiderFree.listIterator();
+		while (arItr.hasNext())
+		{
+			AddressRange ar = arItr.next();
+			int stopInclusive = ar.getStopExclusive() - 1;
+			
+			// If this ar starts in this block
+			if (ar.getStart() >= bankBounds[0] && ar.getStart() <= bankBounds[1])
+			{
+				// and ends it it, remove it and add it to this bank
+				if (stopInclusive >= bankBounds[0] && stopInclusive <= bankBounds[1])
+				{
+					bank.addSpace(ar.getStart(), ar.getStopExclusive());
+					arItr.remove();
+				}
+				// Otherwise cut it at this bank and add that portion to the bank and
+				// the replace it with the remaining portion
+				else
+				{
+					bank.addSpace(ar.getStart(), bankBounds[1] + 1); // To make exclusive
+					arItr.set(new AddressRange(bankBounds[1] + 1, ar.getStopExclusive()));
+				}
+			}
+			// otherwise if this ar stops in this block cut it at this bank and add that 
+			// portion to the bank and the replace it with the remaining portion
+			else if (stopInclusive >= bankBounds[0] && stopInclusive <= bankBounds[1])
+			{
+				bank.addSpace(bankBounds[0], ar.getStopExclusive());
+				arItr.set(new AddressRange(ar.getStart(), bankBounds[0]));
+			}
 		}
 	}
 }

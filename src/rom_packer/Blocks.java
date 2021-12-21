@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import gbc_framework.SegmentedWriter;
+import gbc_framework.QueuedWriter;
 import gbc_framework.rom_addressing.AssignedAddresses;
 
 public class Blocks 
@@ -66,7 +66,7 @@ public class Blocks
 		return movableBlocks;
 	}
 	
-	public void writeBlocks(SegmentedWriter writer, AssignedAddresses assignedAddresses) throws IOException
+	public void writeBlocks(QueuedWriter writer, AssignedAddresses assignedAddresses) throws IOException
 	{
 		for (AllocBlock block : fixedBlocks)
 		{
