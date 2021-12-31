@@ -92,10 +92,6 @@ public class AllocatableBank
 	
 	public boolean addFixedBlock(FixedBlock fixedAlloc, AssignedAddresses assignedAddresses)
 	{
-		if (bank == 7)
-		{
-			int i = 0;
-		}
 		List<AddressRange> spacesLeft = getSpacesCopy();
 		
 		if (!(fixedAlloc instanceof ReplacementBlock))
@@ -238,10 +234,6 @@ public class AllocatableBank
 	
 	public void addMovableBlock(MovableBlock alloc)
 	{
-		if (bank == 7)
-		{
-			int i = 0;
-		}
 		priortizedAllocations.add(alloc);
     }
 
