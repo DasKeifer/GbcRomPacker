@@ -4,6 +4,7 @@ package rom_packer;
 import gbc_framework.SegmentedByteBlock;
 import gbc_framework.rom_addressing.AssignedAddresses;
 import gbc_framework.rom_addressing.BankAddress;
+import gbc_framework.rom_addressing.BankAddress.BankAddressLimitType;
 
 public class ReplacementBlock extends FixedBlock
 {
@@ -62,6 +63,6 @@ public class ReplacementBlock extends FixedBlock
 		}
 		
 		// Now assign the end segment at the size instead of where it actually ends
-		assignedAddresses.put(endSegmentName, blockAddress.newOffsettedWithinBank(getSize()));
+		assignedAddresses.put(endSegmentName, blockAddress.newOffsetted(getSize(), BankAddressLimitType.WITHIN_BANK));
 	}
 }

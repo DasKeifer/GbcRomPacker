@@ -9,8 +9,8 @@ import gbc_framework.QueuedWriter;
 import gbc_framework.SegmentedByteBlock;
 import gbc_framework.rom_addressing.AssignedAddresses;
 import gbc_framework.rom_addressing.BankAddress;
-import gbc_framework.rom_addressing.BankAddress.LimitType;
-import gbc_framework.rom_addressing.BankAddress.ToUseType;
+import gbc_framework.rom_addressing.BankAddress.BankAddressLimitType;
+import gbc_framework.rom_addressing.BankAddress.BankAddressToUseType;
 
 public class AllocBlock
 {
@@ -97,8 +97,8 @@ public class AllocBlock
 			String segmentId = segItr.next();
 			BankAddress relAddress = blockAddress.newSum(
 					relAddresses.getThrow(segmentId), 
-					ToUseType.ADDRESS_IN_BANK_ONLY, 
-					LimitType.WITHIN_BANK_OR_START_OF_NEXT);
+					BankAddressToUseType.ADDRESS_IN_BANK_ONLY, 
+					BankAddressLimitType.WITHIN_BANK_OR_START_OF_NEXT);
 			
 			// If its null, we passed the bank. Otherwise if its the next bank, then we reached the end perfectly so if this
 			// was the last segment then we are good. Otherwise we are in trouble
@@ -113,7 +113,7 @@ public class AllocBlock
 			assignedAddresses.put(segmentId, relAddress);
 		}
 		
-		return blockAddress.newSum(relativeSegEnd, ToUseType.ADDRESS_IN_BANK_ONLY);
+		return blockAddress.newSum(relativeSegEnd, BankAddressToUseType.ADDRESS_IN_BANK_ONLY);
 	}
 
 	public void removeAddresses(AssignedAddresses assignedAddresses) 
