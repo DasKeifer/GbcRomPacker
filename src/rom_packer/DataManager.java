@@ -275,8 +275,6 @@ public class DataManager
 		int address = bankBounds[0];
 		while (address <= bankBounds[1])
 		{
-			//Two cases - first is 
-			
 			if (rawBytes[address] == (byte) 0xFF)
 			{
 				int spaceStart = address;

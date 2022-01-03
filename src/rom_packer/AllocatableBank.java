@@ -92,18 +92,23 @@ public class AllocatableBank
 	
 	public boolean addFixedBlock(FixedBlock fixedAlloc, AssignedAddresses assignedAddresses)
 	{
-		List<AddressRange> spacesLeft = getSpacesCopy();
-		
 		if (!(fixedAlloc instanceof ReplacementBlock))
 		{
-			// Get the existing list of spaces
-			removeFixedBlocksSpaces(spacesLeft, assignedAddresses);
+			// Get the spaces left with the current blocks
+			List<AddressRange> spacesLeft = getSpacesLeftRemovingFixedAllocs(assignedAddresses);
 			
 			// Now try to add this one
-			return tryRemoveSpace(fixedAlloc, spacesLeft, assignedAddresses);
+			boolean success = tryRemoveSpace(fixedAlloc, spacesLeft, assignedAddresses);
+
+			if (success)
+			{
+				fixedAllocations.add(fixedAlloc);
+			}
+			return success;
 		}
 		else
 		{
+			// TODO: Check for overlap with existing blocks?
 			fixedAllocations.add(fixedAlloc);
 			return true;
 		}
@@ -135,7 +140,7 @@ public class AllocatableBank
 		for (FixedBlock block : fixedAllocations)
 		{
 			// If its a replacement block, we might not have space for it since its overwriting
-			// other code. For those we skip them here and handle them later
+			// other code. For those we skip them here and handle them in the other function
 			if (block instanceof ReplacementBlock)
 			{
 				continue;
