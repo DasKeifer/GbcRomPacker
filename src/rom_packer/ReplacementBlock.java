@@ -54,12 +54,13 @@ public class ReplacementBlock extends FixedBlock
 	@Override
 	public void assignAddresses(BankAddress blockAddress, AssignedAddresses assignedAddresses) 
 	{	
-		BankAddress blockEnd = assignBlockAddressesOnly(blockAddress, assignedAddresses);
+		BankAddress blockEnd = assignCodeBlockAddress(blockAddress, assignedAddresses);
 	
 		// Ensure the block length is shorter than the length otherwise we need to throw - its too large to fit safely
 		if (getSize() - blockAddress.getDifference(blockEnd) < 0)
 		{
-			throw new IllegalArgumentException("TODO");
+			throw new IllegalArgumentException("Replacement Block code (" + blockAddress.getDifference(blockEnd) + 
+					"is larger than the replacement block size (" + getSize() + ")");
 		}
 		
 		// Now assign the end segment at the size instead of where it actually ends

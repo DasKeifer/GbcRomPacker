@@ -71,8 +71,8 @@ public class DataManager
 			assignAddressesInBanks();
 			return new AssignedAddresses(assignedAddresses);
 		}
-		
-		return null;
+
+		throw new IllegalArgumentException("Failed to assign address for the all the blocks!");
 	}
 
 	private void allocateFixedBlocks(List<FixedBlock> fixedBlocks)
@@ -129,6 +129,7 @@ public class DataManager
 				if (hybridSpaceToBlank != null)
 				{
 					// TODO: optimization a get original size?
+					// Combine with spaces to consider free
 					hybridSpaceToBlank.add(new AddressRange(
 							block.getFixedBlock().getFixedAddress(), 
 							block.getFixedBlock().getWorstCaseSize(assignedAddresses)));
@@ -241,9 +242,6 @@ public class DataManager
 			bank.assignAddresses(assignedAddresses);
 		}
 	}
-	
-	// TODO later: we need to avoid images/gfx somehow - perhaps have it hardcoded which banks these occur in?
-	// or maybe just have a separate file to read to describe space in rom?
 	
 	//engine banks 0-8 + 9 & a
 	//effect functions: b (overflow to a?)

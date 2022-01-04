@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import gbc_framework.QueuedWriter;
+import gbc_framework.SegmentNamingUtils;
 import gbc_framework.SegmentedByteBlock;
 import gbc_framework.rom_addressing.AssignedAddresses;
 import gbc_framework.rom_addressing.BankAddress;
@@ -17,14 +18,12 @@ public class AllocBlock
 	public static final String END_OF_DATA_BLOCK_SUBSEG_LABEL = "__end_of_data_block__";
 	
 	protected SegmentedByteBlock block;
-	// TODO: make const
-	protected String endSegmentName; // Root name + "." + END_OF_DATA_BLOCK_SUBSEG_LABEL
+	protected final String endSegmentName; // Root name + "." + END_OF_DATA_BLOCK_SUBSEG_LABEL
 	
 	public AllocBlock(SegmentedByteBlock code) 
 	{
 		this.block = code;
-		this.endSegmentName = block.getId() + END_OF_DATA_BLOCK_SUBSEG_LABEL;
-		//endSegmentName = CompilerUtils.formSubsegmentName(END_OF_DATA_BLOCK_SUBSEG_LABEL, id);
+		this.endSegmentName = SegmentNamingUtils.formSubsegmentName(END_OF_DATA_BLOCK_SUBSEG_LABEL, block.getId());
 	}
 
 	public String getId()
@@ -69,23 +68,22 @@ public class AllocBlock
 
 	public void assignAddresses(BankAddress blockAddress, AssignedAddresses assignedAddresses) 
 	{	
-		BankAddress blockEnd = assignBlockAddressesOnly(blockAddress, assignedAddresses);
+		BankAddress blockEnd = assignCodeBlockAddress(blockAddress, assignedAddresses);
 		
 		// Now assign the end segment
 		assignedAddresses.put(endSegmentName, blockEnd);
 	}
 	
-	protected BankAddress assignBlockAddressesOnly(BankAddress blockAddress, AssignedAddresses assignedAddresses) 
+	protected BankAddress assignCodeBlockAddress(BankAddress blockAddress, AssignedAddresses assignedAddresses) 
 	{	
-		if (blockAddress == BankAddress.UNASSIGNED)
+		if (!blockAddress.isFullAddress())
 		{
-			throw new IllegalArgumentException("TODO");
+			throw new IllegalArgumentException("Attempted to assign an incomplete address (" + blockAddress + 
+					") to AllocBlock \"" + block.getId() + "\"");
 		}
 		
-		// Will throw if the addresses are invalid - means we can make some assumptions here
+		// Get the relative addresses for the segments
 		AssignedAddresses relAddresses = new AssignedAddresses();
-		
-		// TODO: Doesn't capture the shrinking step below - refactor to capture
 		BankAddress relativeSegEnd = block.getSegmentsRelativeAddresses(blockAddress, assignedAddresses, relAddresses);
 		
 		// For each segment relative address, offset it to the block address and add it to the
