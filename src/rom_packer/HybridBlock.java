@@ -3,6 +3,7 @@ package rom_packer;
 import java.io.IOException;
 
 import gbc_framework.QueuedWriter;
+import gbc_framework.rom_addressing.AddressRange;
 import gbc_framework.rom_addressing.AssignedAddresses;
 
 public class HybridBlock 
@@ -14,6 +15,11 @@ public class HybridBlock
 	{
 		fixed = new FixedBlock(block.block, preferredStartAddress);
 		movable = block;
+	}
+	
+	public AddressRange determineNeededBlankingForMoving()
+	{
+		return null;
 	}
 	
 	public FixedBlock getFixedBlock() 

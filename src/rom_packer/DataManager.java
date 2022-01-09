@@ -47,7 +47,12 @@ public class DataManager
 			byte[] bytesToAllocateIn, 
 			Blocks blocks, 
 			List<AddressRange> spacesToConsiderFree,
-			List<AddressRange> hybridSpaceToBlank
+			List<AddressRange> hybridSpaceToBlank // TODO: should this really be different than other? Probably not
+				// If I do do that, then there isn't a difference between the hybrids internal to here or the fixed
+				// blocks as all could be handled externally when adding them
+				// How about this - remove concept of blanking from blocks entirely and have a separate list in
+				// blocks for all blanked spaces. Then we can handle it however we want (i.e. at read time for
+				// text or at creation time for tweaks)
 	)
 	{
 		freeSpace.clear();
@@ -125,14 +130,16 @@ public class DataManager
 				unfixed.add(block.getMovableBlock());
 				block.getFixedBlock().removeAddresses(assignedAddresses);
 				
-				// If the list was passed to keep track of the moved hybrids, add it
+				// If the list was passed to keep track of the read in hybrids that
+				// were moved
 				if (hybridSpaceToBlank != null)
 				{
-					// TODO: optimization a get original size?
-					// Combine with spaces to consider free
-					hybridSpaceToBlank.add(new AddressRange(
-							block.getFixedBlock().getFixedAddress(), 
-							block.getFixedBlock().getWorstCaseSize(assignedAddresses)));
+					AddressRange toBlank = block.determineNeededBlankingForMoving();
+					// Some do not need blanking
+					if (toBlank != null)
+					{
+						hybridSpaceToBlank.add(toBlank);
+					}
 				}
 			}
 		}

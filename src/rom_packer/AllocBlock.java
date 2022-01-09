@@ -13,7 +13,7 @@ import gbc_framework.rom_addressing.BankAddress;
 import gbc_framework.rom_addressing.BankAddress.BankAddressLimitType;
 import gbc_framework.rom_addressing.BankAddress.BankAddressToUseType;
 
-public class AllocBlock
+public abstract class AllocBlock
 {
 	public static final String END_OF_DATA_BLOCK_SUBSEG_LABEL = "__end_of_data_block__";
 	
@@ -25,6 +25,8 @@ public class AllocBlock
 		this.block = code;
 		this.endSegmentName = SegmentNamingUtils.formSubsegmentName(END_OF_DATA_BLOCK_SUBSEG_LABEL, block.getId());
 	}
+	
+	public abstract boolean allowAssigningNonBlankAddressSpace();
 
 	public String getId()
 	{

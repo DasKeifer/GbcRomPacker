@@ -24,6 +24,12 @@ public class ReplacementBlock extends FixedBlock
 		setReplacementBlockCommonData(replaceLength);
 	}
 	
+	@Override
+	public boolean allowAssigningNonBlankAddressSpace()
+	{
+		return true;
+	}
+	
 	private void setReplacementBlockCommonData(int replaceLength)
 	{
 		this.replaceLength = replaceLength;

@@ -14,6 +14,12 @@ public class FixedBlock extends AllocBlock
 		super(code);
 		address = new BankAddress(fixedStartAddress);
 	}
+	
+	@Override
+	public boolean allowAssigningNonBlankAddressSpace()
+	{
+		return false;
+	}
 
 	public BankAddress getFixedAddress() 
 	{
