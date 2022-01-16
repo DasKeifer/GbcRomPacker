@@ -2,6 +2,7 @@ package rom_packer;
 
 
 import gbc_framework.SegmentedByteBlock;
+import gbc_framework.rom_addressing.AddressRange;
 import gbc_framework.rom_addressing.BankAddress;
 
 public class FixedBlock extends AllocBlock
@@ -14,15 +15,14 @@ public class FixedBlock extends AllocBlock
 		super(code);
 		address = new BankAddress(fixedStartAddress);
 	}
-	
-	@Override
-	public boolean allowAssigningNonBlankAddressSpace()
-	{
-		return false;
-	}
 
 	public BankAddress getFixedAddress() 
 	{
 		return new BankAddress(address);
+	}
+	
+	public AddressRange createBlankedRangeForBlock(int size)
+	{
+		return new AddressRange(address, size);
 	}
 }

@@ -17,11 +17,6 @@ public class HybridBlock
 		movable = block;
 	}
 	
-	public AddressRange determineNeededBlankingForMoving()
-	{
-		return null;
-	}
-	
 	public FixedBlock getFixedBlock() 
 	{
 		return fixed;
@@ -35,5 +30,10 @@ public class HybridBlock
 	public void write(QueuedWriter writer, AssignedAddresses assignedAddresses) throws IOException
 	{
 		movable.write(writer, assignedAddresses);
+	}
+	
+	public AddressRange createBlankedRangeForBlock(int size)
+	{
+		return fixed.createBlankedRangeForBlock(size);
 	}
 }

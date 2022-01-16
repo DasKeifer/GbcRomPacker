@@ -31,42 +31,18 @@ public class DataManager
 			Blocks blocks
 	)
 	{
-		return allocateBlocks(bytesToAllocateIn, blocks, null);
-	}
-	
-	public AssignedAddresses allocateBlocks(
-			byte[] bytesToAllocateIn, 
-			Blocks blocks,
-			List<AddressRange> spacesToConsiderFree
-	)
-	{
-		return allocateBlocks(bytesToAllocateIn, blocks, spacesToConsiderFree, null);
-	}
-	
-	public AssignedAddresses allocateBlocks(
-			byte[] bytesToAllocateIn, 
-			Blocks blocks, 
-			List<AddressRange> spacesToConsiderFree,
-			List<AddressRange> hybridSpaceToBlank // TODO: should this really be different than other? Probably not
-				// If I do do that, then there isn't a difference between the hybrids internal to here or the fixed
-				// blocks as all could be handled externally when adding them
-				// How about this - remove concept of blanking from blocks entirely and have a separate list in
-				// blocks for all blanked spaces. Then we can handle it however we want (i.e. at read time for
-				// text or at creation time for tweaks)
-	)
-	{
 		freeSpace.clear();
 		assignedAddresses.clear();
 		
 		// Determine what space we have free
-		determineAllFreeSpace(bytesToAllocateIn, spacesToConsiderFree);
+		determineAllFreeSpace(bytesToAllocateIn, blocks.getAllBlankedBlocks());
 		
 		// Assign fixed blocks first so the movable ones can reference them
 		allocateFixedBlocks(blocks.getAllFixedBlocks());
 	
 		// Handle the fixed blocks
 		List<MovableBlock> toAlloc = new LinkedList<>(blocks.getAllMovableBlocks());
-		toAlloc.addAll(tryFixHybridBlocks(blocks.getAllHybridBlocks(), hybridSpaceToBlank));
+		toAlloc.addAll(tryFixHybridBlocks(blocks.getAllHybridBlocks()));
 		
 		// Allocate space for the constrained blocks then the unconstrained ones
 		if (tryToAssignBanks(toAlloc))
@@ -96,14 +72,14 @@ public class DataManager
 			block.assignAddresses(address, assignedAddresses);
 			if (!freeSpace.get(address.getBank()).addFixedBlock(block, assignedAddresses))
 			{
-                throw new RuntimeException(String.format("There was not space from 0x%x to 0x%x in bank 0x%x for FixedBlock %s - "
-                        + "only ReplacementBlocks do not need free space in the bank", address.getAddressInBank(), 
-                        address.getAddressInBank() + block.getWorstCaseSize(assignedAddresses), address.getBank(), block.getId())); 
+                throw new RuntimeException(String.format("There was not space from 0x%x to 0x%x in bank 0x%x for FixedBlock %s", 
+                		address.getAddressInBank(), address.getAddressInBank() + block.getWorstCaseSize(assignedAddresses),
+                		address.getBank(), block.getId())); 
 			}
 		}
 	}
 	
-	private List<MovableBlock> tryFixHybridBlocks(List<HybridBlock> hybridBlocks, List<AddressRange> hybridSpaceToBlank) 
+	private List<MovableBlock> tryFixHybridBlocks(List<HybridBlock> hybridBlocks) 
 	{
 		// For each fixed block, try first to fix it
 		List<MovableBlock> unfixed = new LinkedList<>();
@@ -129,18 +105,6 @@ public class DataManager
 				// assigned addresses
 				unfixed.add(block.getMovableBlock());
 				block.getFixedBlock().removeAddresses(assignedAddresses);
-				
-				// If the list was passed to keep track of the read in hybrids that
-				// were moved
-				if (hybridSpaceToBlank != null)
-				{
-					AddressRange toBlank = block.determineNeededBlankingForMoving();
-					// Some do not need blanking
-					if (toBlank != null)
-					{
-						hybridSpaceToBlank.add(toBlank);
-					}
-				}
 			}
 		}
 		

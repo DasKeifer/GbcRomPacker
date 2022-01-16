@@ -57,12 +57,6 @@ public class MovableBlock extends AllocBlock
 			addAllowableBankRange(pref);
 		}
 	}
-	
-	@Override
-	public boolean allowAssigningNonBlankAddressSpace()
-	{
-		return false;
-	}
 
 	public void addAllowableBankRange(PrioritizedBankRange bankPref)
 	{

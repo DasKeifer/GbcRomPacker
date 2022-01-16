@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import gbc_framework.QueuedWriter;
+import gbc_framework.rom_addressing.AddressRange;
 import gbc_framework.rom_addressing.AssignedAddresses;
 
 public class Blocks 
@@ -15,6 +16,7 @@ public class Blocks
 	private List<FixedBlock> fixedBlocks;
 	private List<HybridBlock> hybridBlocks;
 	private List<MovableBlock> movableBlocks;
+	private List<AddressRange> blankedBlocks;
 	
 	public Blocks()
 	{
@@ -22,6 +24,7 @@ public class Blocks
 		fixedBlocks = new LinkedList<>();
 		hybridBlocks = new LinkedList<>();
 		movableBlocks = new LinkedList<>();
+		blankedBlocks = new LinkedList<>();
 	}
 	
 	public void addFixedBlock(FixedBlock block)
@@ -51,6 +54,19 @@ public class Blocks
 		}
 	}
 	
+	public void addBlankedBlock(AddressRange toBlank)
+	{
+		blankedBlocks.add(toBlank);
+	}
+	
+	public void addBlankedBlocks(List<AddressRange> toBlank)
+	{
+		for (AddressRange range : toBlank)
+		{
+			addBlankedBlock(range);
+		}
+	}
+	
 	public List<FixedBlock> getAllFixedBlocks()
 	{
 		return fixedBlocks;
@@ -64,6 +80,13 @@ public class Blocks
 	public List<MovableBlock> getAllMovableBlocks()
 	{
 		return movableBlocks;
+	}
+	
+	public List<AddressRange> getAllBlankedBlocks()
+	{
+		// TODO: optimize and only called when changed
+		AddressRange.sortAndCombine(blankedBlocks);
+		return blankedBlocks;
 	}
 	
 	public void writeBlocks(QueuedWriter writer, AssignedAddresses assignedAddresses) throws IOException

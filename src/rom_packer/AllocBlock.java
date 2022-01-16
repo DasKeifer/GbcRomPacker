@@ -26,8 +26,6 @@ public abstract class AllocBlock
 		this.endSegmentName = SegmentNamingUtils.formSubsegmentName(END_OF_DATA_BLOCK_SUBSEG_LABEL, block.getId());
 	}
 	
-	public abstract boolean allowAssigningNonBlankAddressSpace();
-
 	public String getId()
 	{
 		return block.getId();
@@ -65,7 +63,10 @@ public abstract class AllocBlock
 
 	public void assignBank(byte bank, AssignedAddresses assignedAddresses) 
 	{
-		block.assignBank(bank, assignedAddresses);
+		for (String segId : block.getSegmentIds())
+		{
+			assignedAddresses.putBankOnly(segId, bank);
+		}
 	}
 
 	public void assignAddresses(BankAddress blockAddress, AssignedAddresses assignedAddresses) 
@@ -118,7 +119,10 @@ public abstract class AllocBlock
 
 	public void removeAddresses(AssignedAddresses assignedAddresses) 
 	{
-		block.removeAddresses(assignedAddresses);
+		for (String segId : block.getSegmentIds())
+		{
+			assignedAddresses.remove(segId);
+		}
 	}
 	
 	public void write(QueuedWriter writer, AssignedAddresses assignedAddresses) throws IOException 
