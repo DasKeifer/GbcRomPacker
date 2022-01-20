@@ -225,6 +225,9 @@ public class DataManager
 	private void determineAllFreeSpace(byte[] rawBytes, List<AddressRange> spacesToConsiderFree)
 	{
 		freeSpace.clear();
+		// Create a copy because we remove from it as we use them up when looking through the
+		// individual banks
+		LinkedList<AddressRange> spacesLeftToConsiderFree = new LinkedList<>(spacesToConsiderFree);
 		
 		byte numBanks = (byte) Math.ceil((double) rawBytes.length / RomConstants.BANK_SIZE);
 		for (byte bank = 0; bank < numBanks; bank++)
@@ -233,7 +236,7 @@ public class DataManager
 			AllocatableBank bankSpace = new AllocatableBank(bank);
 			freeSpace.put(bank, bankSpace);
 			
-			determineFreeSpaceInBank(rawBytes, bankSpace, spacesToConsiderFree);
+			determineFreeSpaceInBank(rawBytes, bankSpace, spacesLeftToConsiderFree);
 		}
 	}
 
